@@ -59,12 +59,12 @@
         </div>
         <el-row type="flex" align="middle" justify="space-between" class="post-title">
           <h4>推荐攻略</h4>
-          <el-button type="primary">
-            <i class="el-icon-edit" />
-            <nuxt-link to="/post/create">
-              <span>写游记</span>
-            </nuxt-link>
-          </el-button>
+          <nuxt-link to="/post/create">
+            <el-button type="primary">
+              <i class="el-icon-edit" />
+              写游记
+            </el-button>
+          </nuxt-link>
         </el-row>
         <!-- 推荐攻略 -->
 
@@ -149,11 +149,6 @@ export default {
       this.currentPage = val
       this.setNewPosts()
     },
-    setNewPosts() {
-      const start = (this.currentPage - 1) * this.pageSize
-      const end = start + this.pageSize
-      this.newPosts = this.posts.slice(start, end)
-    },
     // 显示隐藏列表
     outHiddenList(index) {
       this.currentSelection = index
@@ -164,6 +159,11 @@ export default {
     leaveHiddenList() {
       this.hiddenList = false
       this.currentSelection = 999
+    },
+    setNewPosts() {
+      const start = (this.currentPage - 1) * this.pageSize
+      const end = start + this.pageSize
+      this.newPosts = this.posts.slice(start, end)
     },
     // 获取城市
     getCities() {
@@ -181,7 +181,6 @@ export default {
       if (!this.city) {
         params.city = []
       }
-
       this.$axios({
         url: `/posts`,
         params

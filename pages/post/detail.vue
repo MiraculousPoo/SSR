@@ -12,6 +12,7 @@
       <!-- 标题 -->
       <h1>{{ related.title }}</h1>
       <div class="post-info">
+        <!-- <span>攻略：{{ timestamp(related.created_at) }}</span> -->
         <span>攻略：{{ timestamp(related.created_at) }}</span>
         <span>阅读：{{ related.watch }}</span>
       </div>
@@ -25,7 +26,7 @@
             <p>评论{{ totalComments }}</p>
           </div>
           <div class="ctrl-item">
-            <i class="iconfont iconstar1" />
+            <i class="iconfont iconstar1" @click="setCollectPost" />
             <p>收藏</p>
           </div>
           <div class="ctrl-item">
@@ -33,7 +34,7 @@
             <p>分享</p>
           </div>
           <div class="ctrl-item">
-            <i class="iconfont iconding" />
+            <i class="iconfont iconding" @click="getPostLike" />
             <p>点赞{{ related.like||0 }}</p>
           </div>
         </el-row>
@@ -43,10 +44,21 @@
         <h4 class="cmt-title">
           评论
         </h4>
+        <!-- 回复@ -->
+        <el-tag
+          v-if="reply.nickname"
+          closable
+          type="info"
+          class="replyTag"
+          @close="closeReply"
+        >
+          回复 @{{ reply.nickname }}
+        </el-tag>
         <!-- 评论输入框 -->
         <div class="cmt-input">
           <div class="el-textarea">
             <el-input
+              v-model="newForm.content"
               type="textarea"
               resize="none"
               placeholder="说点什么吧..."
@@ -58,22 +70,28 @@
           <div class="cmt-pics">
             <!-- action上传的地址
             list-type文件列表的类型
+            name上传的文件字段名
+            on-success文件上传成功时的钩子
             on-preview点击文件列表中已上传的文件时的钩子
             on-remove文件列表移除文件时的钩子 -->
             <el-upload
-              action="https://jsonplaceholder.typicode.com/posts/"
+              action="http://157.122.54.189:9095/upload"
               list-type="picture-card"
+              :file-list="newForm.pics"
+              name="flies"
               :on-preview="handlePictureCardPreview"
               :on-remove="handleRemove"
+              :on-success="handleSuccess"
+              :on-change="handleChage"
             >
               <i class="el-icon-plus" />
             </el-upload>
             <el-dialog :visible.sync="dialogVisible">
-              <img width="100%" :src="dialogImageUrl" alt="">
+              <img width="100%" :src="`http://157.122.54.189:9095` + dialogImageUrl" alt="">
             </el-dialog>
           </div>
           <div>
-            <button class="el-button cmt-submit el-button--primary el-button--mini">
+            <button class="el-button cmt-submit el-button--primary el-button--mini" @click="commentSubmit">
               提交
             </button>
           </div>
@@ -92,7 +110,7 @@
             <div class="cmt-info">
               <img :src="$axios.defaults.baseURL + item.account.defaultAvatar">
               {{ item.account.nickname }}
-              <i>{{ item.created_at | timestamp }}</i>
+              <i>{{ timestamp(item.created_at) }}</i>
               <span>{{ item.level }}</span>
             </div>
             <div class="cmt-content">
@@ -100,18 +118,19 @@
               <CommentFloor
                 v-if="item.parent"
                 :comments="item.parent"
+                @reply="replySubmit"
               />
               <div class="cmt-new">
                 <p class="cmt-message">
                   {{ item.content }}
                 </p>
                 <el-row type="flex">
-                  <div v-for="(pic, picIndex) in item.pics" :key="picIndex" class="cmt-pic">
-                    <img :src="$axios.defaults.baseURL + pic.url" @click="handlePictureCardPreview(pic)">
+                  <div v-for="(picItem, picIndex) in item.pics" :key="picIndex" class="cmt-pic">
+                    <img :src="$axios.defaults.baseURL + picItem.url">
                   </div>
                 </el-row>
                 <div class="cmt-ctrl">
-                  <a href="javascript:;">回复</a>
+                  <a href="javascript:;" @click="replySubmit(item)">回复</a>
                 </div>
               </div>
             </div>
@@ -120,6 +139,21 @@
       </div>
 
       <!-- 分页 -->
+      <el-row
+        type="flex"
+        justify="center"
+        class="Pagination"
+      >
+        <el-pagination
+          :current-page="Math.floor(start / limit) + 1"
+          :page-sizes="[2, 4, 6, 8]"
+          :page-size="limit"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="totalComments"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </el-row>
     </div>
     <div class="aside">
       <!-- 标题 -->
@@ -134,7 +168,7 @@
             </div>
             <div class="post-text">
               <h5>{{ item.title }}</h5>
-              <p>{{ timestamp(item.created_at) }} 阅读{{ item.watch }}</p>
+              <p>{{ item.created_at }} 阅读{{ item.watch }}</p>
             </div>
           </el-row>
         </nuxt-link>
@@ -152,15 +186,36 @@ export default {
   },
   data() {
     return {
+      // 评论文本
+      // commentText: '',
+      start: 0,
+      // 评论条数
+      limit: 2,
+      // 图片
       dialogImageUrl: '',
+      // 隐藏
       dialogVisible: false,
       // 评论长度
       totalComments: 0,
       // 评论
       comments: [],
+      // 总数据
       related: {},
       // 推荐文章
-      recommends: {}
+      recommends: {},
+      // 评论数据
+      newForm: {
+        // 评论文本
+        content: '',
+        // 评论图片
+        pics: []
+      },
+      reply: {}
+    }
+  },
+  watch: {
+    $route() {
+      window.location.reload()
     }
   },
   mounted() {
@@ -173,68 +228,154 @@ export default {
     })
     // 推荐文章
     this.getPostRecmmend()
-    // 获取点赞
-    this.getPostLike()
     // 获取文章评论
-    this.gatComments()
+    this.gatComments(id)
   },
   methods: {
     // on-remove文件列表移除文件时的钩子
     handleRemove(file, fileList) {
-      console.log(file, fileList)
+      // this.newForm = fileList.map((v) => {
+      //   return v.response[0]
+      // })
+      this.dialogImageUrl = ''
     },
     // on-preview点击文件列表中已上传的文件时的钩子
     handlePictureCardPreview(file) {
+      // if (file.response) {
+      //   file = file.response[0]
+      // }
+      // this.dialogImageUrl = file.url
+      // this.dialogVisible = true
       this.dialogImageUrl = file.url
       this.dialogVisible = true
     },
-    handleSizeChange(val) {
-      console.log(`每页 ${val} 条`)
+    // on-success文件上传成功时的钩子
+    handleSuccess(file, fileList) {
+      // console.log(file)
+      // files[0].url = `http://157.122.54.189:9095` + file[0].url
+      // this.newForm.pics.push(file[0])
+      const { url, ...obj } = file.response[0]
+      this.newForm.pics.push({ url: this.$axios.defaults.baseURL + url, ...obj })
     },
+    handleChage(file, fileList) {
+      console.log(file, fileList)
+    },
+    // 分页
+    // 每页n条
+    handleSizeChange(val) {
+      this.limit = val
+      // 刷新
+      this.gatComments()
+    },
+    // 当前页
     handleCurrentChange(val) {
-      console.log(`当前页: ${val}`)
+      this.start = this.limit * val - 2
+      // 刷新
+      this.gatComments()
     },
     // 时间YYYY-MM-DD h:mm
     timestamp(value) {
       return moment(value).format('YYYY-MM-DD h:mm')
     },
     // 获取点赞
+
     getPostLike() {
-      const { id } = this.recommends
       const { user: { userInfo } } = this.$store.state
       this.$axios({
         url: '/posts/like',
-        data: id,
+        params: {
+          id: this.related.id
+        },
         headers: { Authorization: `Bearer ${userInfo.token}` }
       }).then((res) => {
-        console.log(res)
+        const { status, message } = res.data
+
+        if (status === 0) {
+          this.$message.success(message)
+          this.related.like += 1
+        }
       })
     },
     // 获取推荐文章
     getPostRecmmend() {
       this.$axios({
-        url: '/posts'
+        url: '/posts/recommend'
       }).then((res) => {
         const { data } = res.data
         this.recommends = data
+      })
+    },
+    // 收藏文章
+    setCollectPost() {
+      const { user: { userInfo } } = this.$store.state
+      this.$axios({
+        url: '/posts/star',
+        params: {
+          id: this.related.id
+        },
+        headers: { Authorization: `Bearer ${userInfo.token}` }
+      }).then((res) => {
+        const { message, status } = res.data
+        if (status === 0) {
+          this.$message.success(message)
+        }
+      }).catch((error) => {
+        console.log(error)
       })
     },
     // 获取文章评论
     gatComments() {
       const { id } = this.$route.query
       this.$axios({
-        url: 'http://157.122.54.189:9095/posts/comments',
-        data: {
-          post: id
+        url: '/posts/comments',
+        params: {
+          post: id,
+          _start: this.start,
+          _limit: this.limit
         }
       }).then((res) => {
         const { data, total } = res.data
         this.comments = data
         this.totalComments = total
-        console.log(this.comments)
       })
+    },
+    // 提交
+    commentSubmit() {
+      if (this.newForm.content === '') { return this.$message.error('评论内容为空') }
+      const { user: { userInfo } } = this.$store.state
+      this.newForm = {
+        ...this.newForm,
+        post: this.$route.query.id
+      }
+      this.$axios({
+        url: '/comments',
+        method: 'POST',
+        data: this.newForm,
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`
+        }
+      }).then((res) => {
+        const { message, status } = res.data
+        if (status === 0) {
+          this.$message.success(message)
+          this.newForm = {
+            content: '',
+            pics: []
+          }
+          this.gatComments()
+        }
+      })
+    },
+    // 回复
+    replySubmit(comments) {
+      this.reply = comments.account
+      this.newForm.follow = comments.id
+    },
+    // 回复@
+    closeReply() {
+      this.reply = {}
+      this.newForm.follow = ''
     }
-
   }
 }
 </script>
@@ -243,7 +384,7 @@ export default {
 .detail {
   width: 1000px;
   margin: 0 auto;
-  padding-top: 20px;
+  padding: 20px 0;
 }
 .main {
   width: 700px;
@@ -305,8 +446,12 @@ export default {
   /* 评论 */
   .cmt-wrapper {
     margin-bottom: 20px;
-  }
 
+  }
+  // 分页
+.Pagination{
+  margin-top: 10px;
+}
   .replyTag {
     margin-bottom: 10px;
   }

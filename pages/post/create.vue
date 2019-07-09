@@ -37,19 +37,26 @@
         </div>
       </div>
       <div class="aside">
-        <el-button class="draft-title">
-          草稿箱{{ draftNum }}
+        <el-button
+          type="danger"
+          class="draft-title"
+          @click="delDraft()"
+        >
+          清空草稿箱{{ draftForm.length || 0 }}
         </el-button>
         <div class="draft-list">
-          <div v-for="(item, index) in drafts" :key="index" class="draft-item">
+          <div v-if="draftForm.length===0" class="draft-item-top">
+            草稿箱为空
+          </div>
+          <div v-for="(item, index) in draftForm" v-else :key="index" class="draft-item">
             <el-row type="flex" justify="space-between">
-              <span>{{ item }}</span>
+              <span>{{ item.title }}</span>
               <div>
-                <el-button icon="el-icon-edit" circle size="mini" />
-                <el-button icon="el-icon-delete" circle size="mini" />
+                <el-button icon="el-icon-edit" circle size="mini" @click="editDraft(item)" />
+                <!-- <el-button icon="el-icon-delete" circle size="mini" /> -->
               </div>
             </el-row>
-            <p>{{ item }}</p>
+            <p class="draft-item-p" v-html="item.content" />
           </div>
         </div>
       </div>
@@ -80,10 +87,9 @@ export default {
       },
       // 选择城市
       cityName: '',
-      // 草稿箱数量
-      draftNum: 0,
       // 草稿内容
-      drafts: [],
+      draftForm: [],
+      newDraftForm: [],
       // 富文本编辑器
       config: {
         modules: {
@@ -112,6 +118,7 @@ export default {
         // 上传图片
         uploadImage: {
           url: `${this.$axios.defaults.baseURL}/upload`,
+          // url: `/upload`,
           name: 'files',
           // 上传之前
           uploadBefore(file) {
@@ -122,16 +129,17 @@ export default {
           // 上传成功
           uploadSuccess(res, insert) {
             // 插入
-            insert(`${this.$axios.defaults.baseURL}` + res.data[0].url)
+            insert(`http://157.122.54.189:9095` + res.data[0].url)
           },
           // 上传错误
-          uploadError() {},
+          uploadError() {
+            this.$message.error('上传图片错误')
+          },
           // 显示进度
           showProgress: false
         },
         // 上传视频
         uploadVideo: {
-          // url: "http://157.122.54.189:9095/upload",
           url: `${this.$axios.defaults.baseURL}/upload`,
           name: 'files',
           uploadBefore(file) {
@@ -139,7 +147,7 @@ export default {
           },
           uploadProgress(res) {},
           uploadSuccess(res, insert) {
-            insert(`${this.$axios.defaults.baseURL}` + res.data[0].url)
+            insert(`http://157.122.54.189:9095` + res.data[0].url)
           },
           uploadError() {}
         }
@@ -147,17 +155,47 @@ export default {
     }
   },
   mounted() {
-    this.addLocal()
+    this.$store.replaceState({
+      ...this.$store.state,
+      post: { posts: JSON.parse(localStorage.getItem('posts') || `[]`) }
+    })
+    const { post } = this.$store.state
+    this.draftForm = post.posts
   },
   methods: {
     // 点击添加到草稿
     addDraft() {
-      localStorage.getItem('drafts')
-      console.log(this.drafts)
+      const { commit } = this.$store
+      commit('post/addPost', {
+        title: this.postForm.title,
+        content: this.$refs.vueEditor.editor.root.innerHTML,
+        cityName: this.cityName
+      })
+      this.draftForm.unshift({
+        title: this.postForm.title,
+        content: this.$refs.vueEditor.editor.root.innerHTML,
+        cityName: this.cityName
+      })
+      // 初始化表单
+      this.postForm = {
+        title: '',
+        content: '',
+        city: ''
+      }
+      this.$refs.vueEditor.editor.root.innerHTML = ''
+      this.cityName = ''
     },
-    // 点击添加到草稿
-    addLocal() {
-      this.drafts = JSON.parse(localStorage.getItem('drafts') || `[]`)
+    // 删除草稿
+    delDraft() {
+      this.draftForm = []
+      const { commit } = this.$store
+      commit('post/delPost')
+    },
+    // 编辑草稿
+    editDraft(item) {
+      this.postForm.title = item.title
+      this.$refs.vueEditor.editor.root.innerHTML = item.content
+      this.cityName = item.cityName
     },
     // 点击发布添加文章
     addPost() {
@@ -311,6 +349,13 @@ export default {
       padding: 5px;
       border-radius: 5px;
       border: 1px solid #dcdfe6;
+      .draft-item-top {
+        height: 40px;
+        padding: 5px;
+         line-height: 40px;
+        text-align: center;
+        color: #999;
+      }
       .draft-item {
         margin-bottom: 4px;
         border-bottom: 1px solid rgb(231, 233, 236);
@@ -324,6 +369,7 @@ export default {
 
         p {
           color: #999;
+
         }
       }
     }

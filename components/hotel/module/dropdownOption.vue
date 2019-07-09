@@ -1,5 +1,5 @@
 <template>
-  <el-dropdown placement="" class="filter-dropdown">
+  <el-dropdown placement="" class="filter-dropdown" @command="a">
     <span class="el-dropdown-link">
       <span class="dropdown-link-text">不限</span>
       <i class="el-icon-arrow-down el-icon--right" />
@@ -7,13 +7,17 @@
     <el-dropdown-menu slot="dropdown">
       <div class="filter-view-menu-box">
         <el-dropdown-item
-          v-for="item in dropdowndata"
+          v-for="(item) in dropdowndata"
           :key="item.name"
+          :command="item"
         >
+          <!-- <el-radio :label="item.name" /> -->
           <!-- <i class="iconfont iconright-1" /> -->
           <i class="iconfont iconcircle" />
-          <span class="dropdown-menu-text">{{ item.name }}</span>
-          <slot />
+          <span class="dropdown-menu-text">{{ item.name }}
+
+          </span>
+          <!-- <slot /> -->
         </el-dropdown-item>
       </div>
     </el-dropdown-menu>
@@ -36,8 +40,11 @@ export default {
 
   },
   methods: {
-    a() {
-      console.log(this.dropdowndata, 'sdf')
+    a(v) {
+      console.log(v)
+      const arr = this.dropdowndata.filter((v) => {
+        console.log(v)
+      })
     }
 
   }

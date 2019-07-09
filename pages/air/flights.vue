@@ -108,7 +108,7 @@ export default {
     // 获取航班总数据
     getData() {
       this.$axios({
-        url: 'http://157.122.54.189:9095/airs',
+        url: '/airs',
         params: this.$route.query
       }).then((res) => {
         // 总数据

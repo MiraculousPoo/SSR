@@ -9,9 +9,6 @@
           <el-col class="ta-r">
             0-100
           </el-col>
-          <button @click="setOptionNav">
-            daf
-          </button>
         </el-row>
         <!-- 价格范围选择 -->
         <el-row>
@@ -73,7 +70,7 @@ export default {
   methods: {
     // 设置选择菜单
     setOptionNav() {
-      console.log(this.hotelOptions, 'options')
+      console.log(this.hotelOptions, '设置选择菜')
     }
   }
 }

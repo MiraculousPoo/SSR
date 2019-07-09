@@ -1,23 +1,26 @@
 // 状态树
 export const state = () => ({
-  // userInfo: {
-  //   token: '',
-  //   user: {}
-  // }
+  posts: []
 })
 export const mutations = {
-  // setUserInfo(state, data) {
-  //   state.userInfo = data
-  //   // 保存到本地 老方法
-  //   // localStorage.setItem('userInfo', JSON.stringify(data))
-  // },
-  // // 清除用户数据
-  // cleanUserInfo(state, data) {
-  //   state.userInfo = {
-  //     token: '',
-  //     user: {}
-  //   }
-  // }
+  getPost(state, index) {
+    return state.posts[index]
+  },
+  addPost(state, post) {
+    state.posts.unshift(post)
+    if (state.posts.length > 8) {
+      state.posts.length = 8
+    }
+
+    if (process.browser) {
+      localStorage.setItem('posts', JSON.stringify(state.posts))
+    }
+  },
+
+  delPost(state, index) {
+    state.posts.length = 0
+    localStorage.removeItem('posts')
+  }
 }
 export const actions = {
   // login({ commit }, data) {

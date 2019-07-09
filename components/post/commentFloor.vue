@@ -1,10 +1,10 @@
 <template>
   <div class="cmt-floor">
-    <CommentFloor v-if="comments.parent" :comments="comments.parent" />
+    <CommentFloor v-if="comments.parent" :comments="comments.parent" @reply="replySubmit" />
     <div class="cmt-content">
       <div class="cmt-info">
         {{ comments.account.nickname }}
-        <i> {{ comments.created_at | timestamp }} </i>
+        <i> {{ comments.created_at }} </i>
         <span>{{ comments.level }} </span>
       </div>
       <p class="cmt-message">
@@ -13,10 +13,11 @@
       <el-row type="flex">
         <div v-for="(picItem, picIndex) in comments.pics" :key="picIndex" class="cmt-pic">
           <img :src="$axios.defaults.baseURL +picItem.url">
+          <img>
         </div>
       </el-row>
       <div class="cmt-ctrl">
-        <a href="javascript:;">回复</a>
+        <a href="javascript:;" @click="replySubmit">回复</a>
       </div>
     </div>
   </div>
@@ -35,7 +36,12 @@ export default {
     return {}
   },
   mounted() {
-    console.log(this.comments, 12)
+
+  },
+  methods: {
+    replySubmit() {
+      this.$emit('reply', this.comments)
+    }
   }
 }
 </script>

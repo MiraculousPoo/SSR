@@ -101,9 +101,6 @@ export default {
     }
   },
   mounted() {
-    setTimeout(() => {
-      console.log(this.data)
-    }, 3000)
   },
   methods: {
     // 选择机场时候触发

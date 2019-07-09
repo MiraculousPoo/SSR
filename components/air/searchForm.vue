@@ -106,7 +106,7 @@ export default {
     queryDepartSearch(value, cb) {
       // this.$axios({
       //   // 由于本地的机票接口有问题，暂时修改为线上的地址
-      //   url: 'http://157.122.54.189:9095/airs/city?name=' + value
+      //   url: '/airs/city?name=' + value
       // }).then((res) => {
       //   const { data } = res.data
       //   const newData = data.map((v) => {
@@ -125,7 +125,7 @@ export default {
     queryDestSearch(value, cb) {
       // this.$axios({
       //   // 由于本地的机票接口有问题，暂时修改为线上的地址
-      //   url: 'http://157.122.54.189:9095/airs/city?name=' + value
+      //   url: '/airs/city?name=' + value
       // }).then((res) => {
       //   const { data } = res.data
       //   const newData = data.map((v) => {

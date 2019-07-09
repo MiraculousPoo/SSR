@@ -2,7 +2,7 @@
   <el-row class="hotel-item">
     <el-col :span="8">
       <span class="img-wrapper">
-        <nuxt-link to="">
+        <nuxt-link :to="`hotel/${hotelslist.id}.hotel`">
           <img :src="hotelslist.photos" width="320" height="210">
         </nuxt-link>
       </span>
@@ -11,7 +11,7 @@
     <el-col :span="10">
       <!-- 名称信息 -->
       <h4 class="hotel-cn-name">
-        <nuxt-link to="">
+        <nuxt-link :to="`hotel/${hotelslist.id}.hotel`">
           {{ hotelslist.name }}
         </nuxt-link>
       </h4>

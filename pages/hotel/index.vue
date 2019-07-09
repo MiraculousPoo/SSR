@@ -7,18 +7,22 @@
         <el-breadcrumb-item>南京市酒店预订</el-breadcrumb-item>
       </el-breadcrumb>
     </div>
+
     <!-- 搜索 -->
     <searchBar class="hotel-search-bar" />
+
     <!-- 条件01 -->
+
     <el-row type="flex" class="hotel-option-row">
-      <el-col :span="14">
-        <searchOptions :searchoptions="searchoptions[0]" />
+      <el-col v-for="(item,index) in searchoptions" :key="index" :span="14">
+        <searchOptions :searchoptions="searchoptions[index]" />
       </el-col>
       <el-col :span="10">
-        地图
+        <mapMap :coordinates="hotels.data" @maplocation="maplocation" />
       </el-col>
     </el-row>
     <listFilter :hotel-options="hotelOptions" />
+
     <!-- 酒店列表 -->
     <div class="hotel-list">
       <div v-if="!newHotels" class="no-result">
@@ -56,6 +60,7 @@
 <script>
 import searchBar from '@/components/hotel/searchBar'
 import searchOptions from '@/components/hotel/searchOptions'
+import mapMap from '@/components/hotel/module/mapMap'
 import itemView from '@/components/hotel/itemView'
 import listFilter from '@/components/hotel/listFilter'
 export default {
@@ -63,10 +68,12 @@ export default {
     searchBar,
     searchOptions,
     itemView,
-    listFilter
+    listFilter,
+    mapMap
   },
   data() {
     return {
+      locationdata: {},
       // 查找城市数据
       searchoptions: [],
       // 房间设施
@@ -89,12 +96,13 @@ export default {
   mounted() {
     // 酒店详情
     this.$axios({
-      url: 'http://157.122.54.189:9095/hotels?city=74'
+      url: '/hotels?city=74'
     }).then((res) => {
       const { data } = res
       this.hotels = data
       this.total = this.hotels.data.length
       // 初始化酒店数据，获取start,end条
+
       this.setHotelsList()
     })
     // 酒店选项
@@ -103,6 +111,10 @@ export default {
     this.getCities()
   },
   methods: {
+    // 监听事件默认有一个参数，这个参数就是事件所传递的数据
+    maplocation(data) {
+      this.locationdata = data
+    },
     // 上一页
     prev() {
       this.currentPage--
@@ -150,7 +162,6 @@ export default {
     //   this.$axios({
     //     url: `/province/search?`
     //   }).then((res) => {
-    //     console.log(res)
     //   })
     // }
   }
